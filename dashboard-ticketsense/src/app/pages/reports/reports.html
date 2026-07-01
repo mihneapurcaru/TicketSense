@@ -1,0 +1,47 @@
+<div class="p-8 space-y-8">
+
+  <div class="flex items-center justify-between">
+    <h2 class="text-xl font-semibold text-on-surface">Team Reports</h2>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    @for (team of teams(); track team.queueName) {
+      <div class="neomorph-raised p-5 rounded-xl bg-background flex flex-col h-full">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 neomorph-inset rounded-lg flex items-center justify-center">
+            <span class="material-symbols-outlined text-primary">{{ team.icon }}</span>
+          </div>
+          <h4 class="font-semibold text-on-surface">{{ team.queueName }}</h4>
+        </div>
+        <div class="space-y-4 flex-1">
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-on-surface-variant">Solved</span>
+            <span class="font-semibold">{{ team.solved }}</span>
+          </div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-on-surface-variant">SLA Success</span>
+            <span class="font-semibold" [class]="slaColor(team.slaSuccessPercentage)">
+              {{ team.slaSuccessPercentage > 0 ? team.slaSuccessPercentage + '%' : '—' }}
+            </span>
+          </div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-on-surface-variant">Avg. Res. Time</span>
+            <span class="font-semibold">{{ formatMinutes(team.avgResolutionMinutes) }}</span>
+          </div>
+        </div>
+        <button
+          (click)="downloadPdf(team.queueName)"
+          class="mt-8 w-full py-3 neomorph-raised rounded-xl text-primary text-xs font-semibold flex items-center justify-center gap-2 hover:bg-[#f0f2f5] transition-all">
+          <span class="material-symbols-outlined text-base">file_download</span>
+          Download Team Report
+        </button>
+      </div>
+    } @empty {
+      <div class="col-span-3 flex flex-col items-center gap-2 py-16 text-slate-400">
+        <span class="material-symbols-outlined text-4xl">analytics</span>
+        <p class="text-sm font-medium">Loading reports...</p>
+      </div>
+    }
+  </div>
+
+</div>

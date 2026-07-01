@@ -1,0 +1,177 @@
+<div class="p-8 space-y-8">
+
+  <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="neomorph-raised p-6 rounded-xl bg-surface">
+      <div class="flex items-center justify-between mb-4">
+        <div class="p-2 rounded-lg neomorph-inset text-indigo-600">
+          <span class="material-symbols-outlined">verified</span>
+        </div>
+        @if (summary()) {
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded"
+                [class]="summary()!.compliancePercentage >= 95 ? 'text-emerald-500 bg-emerald-50' : 'text-amber-600 bg-amber-50'">
+            {{ summary()!.compliancePercentage >= 95 ? 'On Target' : 'Below Target' }}
+          </span>
+        }
+      </div>
+      <p class="text-slate-500 text-xs font-semibold mb-1">SLA Compliance</p>
+      <h3 class="text-2xl font-bold text-on-surface tracking-tight">
+        {{ summary() ? summary()!.compliancePercentage + '%' : '—' }}
+      </h3>
+    </div>
+    <div class="neomorph-raised p-6 rounded-xl bg-surface">
+      <div class="flex items-center justify-between mb-4">
+        <div class="p-2 rounded-lg neomorph-inset text-error">
+          <span class="material-symbols-outlined">report_problem</span>
+        </div>
+        @if (summary() && summary()!.activeBreaches > 0) {
+          <span class="text-[10px] font-bold text-error bg-error-container px-2 py-0.5 rounded">High Alert</span>
+        } @else {
+          <span class="text-[10px] font-bold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded">All Clear</span>
+        }
+      </div>
+      <p class="text-slate-500 text-xs font-semibold mb-1">Active Breaches</p>
+      <h3 class="text-2xl font-bold text-on-surface tracking-tight">
+        {{ summary() ? summary()!.activeBreaches : '—' }}
+      </h3>
+    </div>
+    <div class="neomorph-raised p-6 rounded-xl bg-surface">
+      <div class="flex items-center justify-between mb-4">
+        <div class="p-2 rounded-lg neomorph-inset text-tertiary">
+          <span class="material-symbols-outlined">notifications_active</span>
+        </div>
+        <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">Next 2h</span>
+      </div>
+      <p class="text-slate-500 text-xs font-semibold mb-1">Tickets Near Breach</p>
+      <h3 class="text-2xl font-bold text-on-surface tracking-tight">
+        {{ summary() ? summary()!.nearBreachCount : '—' }}
+      </h3>
+    </div>
+    <div class="neomorph-raised p-6 rounded-xl bg-surface">
+      <div class="flex items-center justify-between mb-4">
+        <div class="p-2 rounded-lg neomorph-inset text-primary">
+          <span class="material-symbols-outlined">avg_time</span>
+        </div>
+      </div>
+      <p class="text-slate-500 text-xs font-semibold mb-1">Avg. Resolution Time</p>
+      <h3 class="text-2xl font-bold text-on-surface tracking-tight">
+        {{ summary() ? formatAvgResolution(summary()!.avgResolutionMinutes) : '—' }}
+      </h3>
+    </div>
+  </section>
+
+  <section class="neomorph-raised rounded-xl bg-surface overflow-hidden">
+    <div class="p-6 border-b border-white/40 flex justify-between items-center">
+      <div>
+        <h3 class="text-lg font-bold text-on-surface">Live SLA Watchlist</h3>
+        <p class="text-xs text-slate-500 font-medium">Tickets breaching or within 2 hours of breach</p>
+      </div>
+      <a routerLink="/ticket-queue" class="neomorph-raised px-4 py-2 rounded-xl text-sm font-semibold text-primary hover:text-indigo-700 active:scale-95 transition-all">
+        View All Tickets
+      </a>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left">
+        <thead>
+          <tr class="text-[10px] uppercase tracking-widest text-slate-500 bg-slate-50/50">
+            <th class="px-6 py-4 font-bold">Ticket ID</th>
+            <th class="px-6 py-4 font-bold">Priority</th>
+            <th class="px-6 py-4 font-bold">Queue</th>
+            <th class="px-6 py-4 font-bold">Time Remaining</th>
+            <th class="px-6 py-4 font-bold">Status</th>
+            <th class="px-6 py-4 font-bold">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/20">
+          @for (item of watchlist(); track item.id) {
+            <tr class="hover:bg-slate-50/50 transition-colors">
+              <td class="px-6 py-4">
+                <span class="text-sm font-bold text-indigo-600">#TS-{{ item.id }}</span>
+              </td>
+              <td class="px-6 py-4">
+                <span class="px-2 py-1 rounded-md text-[10px] font-bold" [class]="priorityBadge(item.priority)">
+                  {{ item.priority }}
+                </span>
+              </td>
+              <td class="px-6 py-4 text-sm font-medium text-slate-600">{{ item.queueName }}</td>
+              <td class="px-6 py-4">
+                <div class="flex items-center space-x-2">
+                  <span class="text-sm font-bold" [class]="remainingColor(item.remainingMinutes)">
+                    {{ formatRemaining(item.remainingMinutes) }}
+                  </span>
+                  <div class="w-16 h-1 neomorph-inset bg-slate-200 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full" [class]="remainingBarColor(item.remainingMinutes)" [style.width]="remainingBarWidth(item.remainingMinutes, 120)"></div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <span class="flex items-center text-xs font-semibold text-slate-600">
+                  <span class="w-2 h-2 rounded-full mr-2" [class]="statusDot(item.status)"></span>
+                  {{ item.status.replace('_', ' ') }}
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <a [routerLink]="['/ticket', item.id]" class="p-2 rounded-lg neomorph-raised text-slate-400 hover:text-indigo-600 inline-flex">
+                  <span class="material-symbols-outlined text-sm">open_in_new</span>
+                </a>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="px-6 py-10 text-center">
+                <div class="flex flex-col items-center gap-2 text-slate-400">
+                  <span class="material-symbols-outlined text-3xl text-emerald-500">check_circle</span>
+                  <p class="text-sm font-medium">No tickets near breach</p>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="grid grid-cols-1 gap-8">
+    <section class="neomorph-raised p-6 rounded-xl bg-surface">
+      <div class="flex justify-between items-center mb-8">
+        <div>
+          <h3 class="text-lg font-bold text-on-surface">Breaches by Queue</h3>
+          <p class="text-xs text-slate-500 font-medium">Active + historical breach volume</p>
+        </div>
+      </div>
+      @if (breachesByQueue().length > 0) {
+        <div class="space-y-6">
+          @for (item of breachesByQueue(); track item.queueName; let i = $index) {
+            <div class="space-y-2">
+              <div class="flex justify-between items-end">
+                <span class="text-xs font-bold text-on-surface">{{ item.queueName }}</span>
+                <span class="text-xs font-bold text-slate-500">{{ item.breachCount }} breach{{ item.breachCount !== 1 ? 'es' : '' }}</span>
+              </div>
+              <div class="h-6 w-full neomorph-inset bg-slate-100 rounded-lg p-1">
+                <div class="h-full rounded-md" [class]="queueColor(i)" [style.width]="item.percentage + '%'"></div>
+              </div>
+            </div>
+          }
+        </div>
+        <div class="mt-8 grid grid-cols-3 gap-4 pt-4 border-t border-white/40">
+          <div class="text-center">
+            <p class="text-[10px] font-bold text-slate-500 uppercase mb-1">Most Breached</p>
+            <p class="text-sm font-bold text-error">{{ breachesByQueue()[0]?.queueName ?? '—' }}</p>
+          </div>
+          <div class="text-center border-x border-white/40">
+            <p class="text-[10px] font-bold text-slate-500 uppercase mb-1">Least Breached</p>
+            <p class="text-sm font-bold text-emerald-500">{{ breachesByQueue()[breachesByQueue().length - 1]?.queueName ?? '—' }}</p>
+          </div>
+          <div class="text-center">
+            <p class="text-[10px] font-bold text-slate-500 uppercase mb-1">Total Breaches</p>
+            <p class="text-sm font-bold text-on-surface">{{ breachesByQueue().reduce(sumBreaches, 0) }}</p>
+          </div>
+        </div>
+      } @else {
+        <div class="flex flex-col items-center gap-2 py-12 text-slate-400">
+          <span class="material-symbols-outlined text-3xl text-emerald-500">verified</span>
+          <p class="text-sm font-medium">No breaches recorded</p>
+        </div>
+      }
+    </section>
+  </div>
+</div>

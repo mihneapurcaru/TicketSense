@@ -1,0 +1,226 @@
+<div class="p-8 flex flex-col gap-6">
+  <!-- Page Header -->
+  <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div>
+      <h2 class="text-3xl font-bold tracking-tight text-on-surface">Ticket Queue</h2>
+    </div>
+  </div>
+
+  <section class="flex justify-center">
+    <div class="neomorph-raised p-1.5 rounded-2xl flex bg-background/50 backdrop-blur-sm">
+      @for (queue of queues(); track queue.id) {
+        <button
+          (click)="selectQueue(queue.id)"
+          [class]="activeQueueId() === queue.id
+            ? 'px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 bg-background text-primary shadow-[inset_4px_4px_8px_rgba(0,0,0,0.06),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]'
+            : 'px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 text-on-surface-variant hover:text-primary'">
+          <span class="material-symbols-outlined text-lg">{{ queue.icon }}</span>
+          {{ queue.name }}
+        </button>
+      }
+    </div>
+  </section>
+
+  <section class="neomorph-raised rounded-xl p-5 flex flex-wrap items-center gap-4">
+    <div class="flex items-center gap-2 shrink-0">
+      <span class="material-symbols-outlined text-on-surface-variant text-xl">filter_list</span>
+      <span class="text-sm font-semibold text-on-surface-variant">Filter by:</span>
+    </div>
+
+    <div class="neomorph-inset rounded-xl px-4 py-2 flex items-center gap-2">
+      <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Status:</span>
+      <select [value]="filterStatus()" (change)="setFilterStatus($any($event.target).value)"
+              class="bg-transparent border-none focus:ring-0 text-sm font-semibold text-on-surface p-0 pr-6 cursor-pointer">
+        <option value="">All</option>
+        @for (s of statuses; track s) {
+          <option [value]="s">{{ s.replace('_', ' ') }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="neomorph-inset rounded-xl px-4 py-2 flex items-center gap-2">
+      <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Priority:</span>
+      <select [value]="filterPriority()" (change)="setFilterPriority($any($event.target).value)"
+              class="bg-transparent border-none focus:ring-0 text-sm font-semibold text-on-surface p-0 pr-6 cursor-pointer">
+        <option value="">All</option>
+        @for (p of priorities; track p) {
+          <option [value]="p">{{ p }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="neomorph-inset rounded-xl px-4 py-2 flex items-center gap-2">
+      <span class="material-symbols-outlined text-slate-400 text-sm">person_search</span>
+      <input
+        [value]="filterAssignee()"
+        (input)="setFilterAssignee($any($event.target).value)"
+        type="text"
+        placeholder="Assignee name..."
+        class="bg-transparent border-none focus:ring-0 focus:outline-none text-sm text-on-surface placeholder:text-slate-400 w-32"
+      />
+    </div>
+
+    @if (hasActiveFilters()) {
+      <button (click)="resetFilters()" class="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1">
+        <span class="material-symbols-outlined text-sm">close</span>
+        Clear filters
+      </button>
+    }
+
+    <div class="ml-auto neomorph-inset rounded-xl px-4 py-2 flex items-center gap-2">
+      <span class="material-symbols-outlined text-slate-400 text-sm">swap_vert</span>
+      <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Sort:</span>
+      <select [value]="sortBy()" (change)="setSort($any($event.target).value)"
+              class="bg-transparent border-none focus:ring-0 text-sm font-semibold text-on-surface p-0 pr-6 cursor-pointer">
+        <option value="age_desc">Newest first</option>
+        <option value="age_asc">Oldest first</option>
+        <option value="priority_desc">Priority: High to Low</option>
+        <option value="priority_asc">Priority: Low to High</option>
+      </select>
+    </div>
+
+    <div class="text-xs text-on-surface-variant font-medium shrink-0">
+      {{ filteredTickets().length }} ticket{{ filteredTickets().length !== 1 ? 's' : '' }}
+    </div>
+  </section>
+
+  <div class="neomorph-raised rounded-xl overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead class="bg-surface-container-low text-on-surface-variant text-[11px] uppercase tracking-wider font-bold">
+          <tr>
+            <th class="px-6 py-4 w-12"></th>
+            <th class="px-4 py-4 w-12 text-center">
+              <span class="material-symbols-outlined text-sm">drag_indicator</span>
+            </th>
+            <th class="px-4 py-4">ID</th>
+            <th class="px-4 py-4">Summary</th>
+            <th class="px-4 py-4">Reporter</th>
+            <th class="px-4 py-4">Priority</th>
+            <th class="px-4 py-4">Status</th>
+            <th class="px-4 py-4">Assignee</th>
+            <th class="px-4 py-4">Est. Time</th>
+            <th class="px-4 py-4">Age</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-outline-variant">
+          @for (ticket of pagedTickets(); track ticket.id) {
+            <tr class="group hover:bg-white/40 transition-colors">
+              <td class="px-6 py-4">
+                <input type="checkbox" class="rounded bg-transparent border-outline text-primary focus:ring-primary" />
+              </td>
+              <td class="px-4 py-4 text-center cursor-grab active:cursor-grabbing text-outline-variant group-hover:text-outline transition-colors">
+                <span class="material-symbols-outlined">drag_handle</span>
+              </td>
+              <td class="px-4 py-4 text-xs font-bold text-primary">
+                <a [routerLink]="['/ticket', ticket.id]">TS-{{ ticket.id }}</a>
+              </td>
+              <td class="px-4 py-4">
+                <p class="text-sm font-semibold text-on-surface line-clamp-1">{{ ticket.summary }}</p>
+              </td>
+              <td class="px-4 py-4">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded-full bg-primary-container flex items-center justify-center text-[10px] font-bold text-on-primary-container">{{ getInitials(ticket.reporterFirstName, ticket.reporterLastName) }}</div>
+                  <span class="text-xs font-medium">{{ ticket.reporterFirstName }} {{ ticket.reporterLastName?.charAt(0) }}.</span>
+                </div>
+              </td>
+              <td class="px-4 py-4">
+                @switch (ticket.priority) {
+                  @case ('CRITICAL') {
+                    <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-error-container text-on-error-container text-[10px] font-bold uppercase">
+                      <span class="w-1.5 h-1.5 rounded-full bg-error"></span> Critical
+                    </div>
+                  }
+                  @case ('HIGH') {
+                    <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-[10px] font-bold uppercase">
+                      <span class="w-1.5 h-1.5 rounded-full bg-primary"></span> High
+                    </div>
+                  }
+                  @case ('MEDIUM') {
+                    <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase">
+                      <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Medium
+                    </div>
+                  }
+                  @case ('LOW') {
+                    <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant text-[10px] font-bold uppercase">
+                      <span class="w-1.5 h-1.5 rounded-full bg-outline"></span> Low
+                    </div>
+                  }
+                }
+              </td>
+              <td class="px-4 py-4">
+                @switch (ticket.status) {
+                  @case ('OPEN') {
+                    <span class="text-[10px] font-bold uppercase text-on-surface-variant px-2 py-1 neomorph-raised rounded-lg">Open</span>
+                  }
+                  @case ('IN_PROGRESS') {
+                    <span class="text-[10px] font-bold uppercase text-primary px-2 py-1 neomorph-inset rounded-lg">In Progress</span>
+                  }
+                  @case ('RESOLVED') {
+                    <span class="text-[10px] font-bold uppercase text-emerald-600 px-2 py-1 neomorph-inset rounded-lg">Resolved</span>
+                  }
+                  @case ('CLOSED') {
+                    <span class="text-[10px] font-bold uppercase text-slate-400 px-2 py-1 neomorph-inset rounded-lg">Closed</span>
+                  }
+                }
+              </td>
+              <td class="px-4 py-4">
+                @if (ticket.assignedToId) {
+                  <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-full bg-indigo-200 flex items-center justify-center text-[10px] font-bold text-indigo-700">{{ getInitials(ticket.assignedToFirstName, ticket.assignedToLastName) }}</div>
+                    <span class="text-xs font-medium">{{ ticket.assignedToFirstName }} {{ ticket.assignedToLastName?.charAt(0) }}.</span>
+                  </div>
+                } @else {
+                  <span class="text-xs text-outline italic">Unassigned</span>
+                }
+              </td>
+              <td class="px-4 py-4 text-xs text-on-surface-variant">—</td>
+              <td class="px-4 py-4 text-xs text-on-surface-variant">{{ getAge(ticket.createdAt) }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="10" class="px-6 py-12 text-center">
+                <div class="flex flex-col items-center gap-2 text-slate-400">
+                  <span class="material-symbols-outlined text-4xl">inbox</span>
+                  <p class="text-sm font-medium">No tickets in this queue</p>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (totalPages() > 1) {
+      <div class="px-6 py-4 bg-surface-container-low flex items-center justify-between">
+        <p class="text-xs text-on-surface-variant">
+          Page <span class="font-bold">{{ currentPage() }}</span> of <span class="font-bold">{{ totalPages() }}</span>
+          &bull; <span class="font-bold">{{ filteredTickets().length }}</span> total
+        </p>
+        <div class="flex items-center gap-2">
+          <button
+            (click)="goToPage(currentPage() - 1)"
+            [disabled]="currentPage() === 1"
+            class="neomorph-raised p-1.5 rounded-lg text-on-surface-variant disabled:opacity-40">
+            <span class="material-symbols-outlined">chevron_left</span>
+          </button>
+          @for (page of pages(); track page) {
+            <button
+              (click)="goToPage(page)"
+              [class]="page === currentPage()
+                ? 'neomorph-inset px-3 py-1.5 rounded-lg text-xs font-bold text-primary'
+                : 'neomorph-raised px-3 py-1.5 rounded-lg text-xs font-bold text-on-surface hover:text-primary'">
+              {{ page }}
+            </button>
+          }
+          <button
+            (click)="goToPage(currentPage() + 1)"
+            [disabled]="currentPage() === totalPages()"
+            class="neomorph-raised p-1.5 rounded-lg text-on-surface-variant disabled:opacity-40">
+            <span class="material-symbols-outlined">chevron_right</span>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,41 @@
+<aside class="h-screen w-64 bg-[#e8eaf0] flex flex-col p-4 space-y-4 shadow-[6px_6px_12px_rgba(0,0,0,0.08),-6px_-6px_12px_rgba(255,255,255,0.6)] z-50">
+  <div class="flex items-center space-x-3 px-2 mb-6 mt-2">
+    <div class="w-10 h-10 neomorph-raised rounded-xl flex items-center justify-center bg-[#e8eaf0]">
+      <span class="material-symbols-outlined text-indigo-600" style="font-variation-settings: 'FILL' 1;">confirmation_number</span>
+    </div>
+    <div>
+      <h1 class="text-lg font-semibold text-indigo-600 leading-none">TicketSense</h1>
+      <p class="text-[10px] text-slate-500 font-medium tracking-wider uppercase">Admin Panel</p>
+    </div>
+  </div>
+
+  <nav class="flex-1 space-y-3">
+    <a routerLink="/admin/users" routerLinkActive="text-indigo-600 shadow-[inset_4px_4px_8px_rgba(0,0,0,0.06),inset_-4px_-4px_8px_rgba(255,255,255,0.5)] rounded-xl font-semibold"
+       class="flex items-center space-x-3 p-3 text-slate-600 hover:text-indigo-500 transition-colors rounded-xl">
+      <span class="material-symbols-outlined">group</span>
+      <span class="font-medium">Users</span>
+    </a>
+    <a routerLink="/admin/tickets" routerLinkActive="text-indigo-600 shadow-[inset_4px_4px_8px_rgba(0,0,0,0.06),inset_-4px_-4px_8px_rgba(255,255,255,0.5)] rounded-xl font-semibold"
+       class="flex items-center space-x-3 p-3 text-slate-600 hover:text-indigo-500 transition-colors rounded-xl">
+      <span class="material-symbols-outlined">confirmation_number</span>
+      <span class="font-medium">Tickets</span>
+    </a>
+    <a routerLink="/admin/logs" routerLinkActive="text-indigo-600 shadow-[inset_4px_4px_8px_rgba(0,0,0,0.06),inset_-4px_-4px_8px_rgba(255,255,255,0.5)] rounded-xl font-semibold"
+       class="flex items-center space-x-3 p-3 text-slate-600 hover:text-indigo-500 transition-colors rounded-xl">
+      <span class="material-symbols-outlined">receipt_long</span>
+      <span class="font-medium">Activity Logs</span>
+    </a>
+    <a routerLink="/statistics" routerLinkActive="text-indigo-600 shadow-[inset_4px_4px_8px_rgba(0,0,0,0.06),inset_-4px_-4px_8px_rgba(255,255,255,0.5)] rounded-xl font-semibold"
+       class="flex items-center space-x-3 p-3 text-slate-600 hover:text-indigo-500 transition-colors rounded-xl">
+      <span class="material-symbols-outlined">bar_chart</span>
+      <span class="font-medium">Statistics</span>
+    </a>
+  </nav>
+
+  <div class="mt-auto pt-4 border-t border-slate-200/50 space-y-2">
+    <button (click)="logout()" class="flex items-center space-x-3 p-3 text-slate-500 hover:text-indigo-500 transition-all text-sm w-full">
+      <span class="material-symbols-outlined">logout</span>
+      <span>Logout</span>
+    </button>
+  </div>
+</aside>
