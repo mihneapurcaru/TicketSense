@@ -1,0 +1,130 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:17-alpine
+    container_name: ticketsense-postgres
+    environment:
+      POSTGRES_DB: ticketsense
+      POSTGRES_USER: ticketsense
+      POSTGRES_PASSWORD: ticketsense_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ticketsense"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # OpenLDAP Server
+  openldap:
+    image: osixia/openldap:1.5.0
+    container_name: ticketsense-ldap
+    environment:
+      LDAP_ORGANISATION: "TicketSense"
+      LDAP_DOMAIN: "ticketsense.local"
+      LDAP_ADMIN_PASSWORD: "admin_secret"
+      LDAP_BASE_DN: "dc=ticketsense,dc=local"
+    ports:
+      - "389:389"
+      - "636:636"
+    volumes:
+      - ldap_data:/var/lib/ldap
+      - ldap_config:/etc/ldap/slapd.d
+
+  # phpLDAPadmin
+  phpldapadmin:
+    image: osixia/phpldapadmin:0.9.0
+    container_name: ticketsense-phpldapadmin
+    environment:
+      PHPLDAPADMIN_LDAP_HOSTS: openldap
+      PHPLDAPADMIN_HTTPS: "false"
+    ports:
+      - "8085:80"
+    depends_on:
+      - openldap
+
+  # NLP Ticket Classifier
+  nlp:
+    build:
+      context: ./nlp-ticketsense
+      dockerfile: Dockerfile
+    container_name: ticketsense-nlp
+    environment:
+      CONFIDENCE_THRESHOLD: "0.70"
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Ollama Local LLM
+  ollama:
+    image: ollama/ollama
+    container_name: ticketsense-ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    entrypoint: ["/bin/bash", "-c", "ollama serve & sleep 5 && ollama pull llama3.2 && wait"]
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list | grep -q llama3.2"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+
+  # Spring Boot Backend
+  backend:
+    build:
+      context: ./service-ticketsense
+      dockerfile: Dockerfile
+    container_name: ticketsense-backend
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/ticketsense
+      DB_USERNAME: ticketsense
+      DB_PASSWORD: ticketsense_secret
+      LDAP_URLS: ldap://openldap:389
+      LDAP_BASE: dc=ticketsense,dc=local
+      LDAP_USERNAME: cn=admin,dc=ticketsense,dc=local
+      LDAP_PASSWORD: admin_secret
+      NLP_SERVICE_URL: http://nlp:8000
+      OLLAMA_SERVICE_URL: http://ollama:11434
+      UPLOADS_DIR: /uploads
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+    volumes:
+      - uploads_data:/uploads
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      openldap:
+        condition: service_started
+      nlp:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+
+  # Angular Frontend (dev mode with hot reload)
+  frontend:
+    build:
+      context: ./dashboard-ticketsense
+      dockerfile: Dockerfile.dev
+    container_name: ticketsense-frontend
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./dashboard-ticketsense/src:/app/src
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  ldap_data:
+  ldap_config:
+  uploads_data:
+  ollama_data:
